@@ -1,0 +1,80 @@
+#! /bin/python3
+
+import argparse
+
+def get_initial(name):
+    return name[0] if name else ""
+
+def generate_usernames(first_name, last_name, middle_name=None, nickname=None, year=None):
+    # Prepare names and initials
+    initials = [get_initial(first_name), get_initial(last_name)]
+    names = [first_name, last_name]
+    if middle_name:
+        names.insert(1, middle_name)
+        initials.insert(1, get_initial(middle_name))
+    
+    # Prepare concatenation options and year combinations
+    concatenations = ['', '_', '-', '.']
+    years = [''] + [delim + str(year)[-2:] for delim in concatenations] + [delim + str(year) for delim in concatenations] if year else ['']
+
+    # Generate username combinations
+    usernames = []
+    for concat in concatenations:
+        for yr in years:
+            # Full names
+            usernames += [concat.join(names).lower() + yr]
+            # Initials
+            if middle_name:  # Only generate initials if middle name is provided
+                usernames += [concat.join(initials).lower() + yr]
+            # First name/initial + last name
+            usernames += [(names[0] + concat + names[-1]).lower() + yr]
+            usernames += [(initials[0] + concat + names[-1]).lower() + yr]
+            # First name/initial + last initial
+            usernames += [(names[0] + concat + initials[-1]).lower() + yr]
+            usernames += [(initials[0] + concat + initials[-1]).lower() + yr]
+            # First name/initial + middle initial + last name
+            if middle_name:
+                usernames += [(names[0] + get_initial(middle_name) + concat + names[-1]).lower() + yr]
+                usernames += [(initials[0] + get_initial(middle_name) + concat + names[-1]).lower() + yr]
+    
+    # If nickname provided, add it alone as well and replace the first name
+    if nickname:
+        usernames.append(nickname)
+        names[0] = nickname
+        initials[0] = get_initial(nickname)
+        for concat in concatenations:
+            for yr in years:
+                usernames += [concat.join(names).lower() + yr]
+                if middle_name:
+                    usernames += [concat.join(initials).lower() + yr]
+                    usernames += [(names[0] + get_initial(middle_name) + concat + names[-1]).lower() + yr]
+                    usernames += [(initials[0] + get_initial(middle_name) + concat + names[-1]).lower() + yr]
+                usernames += [(names[0] + concat + names[-1]).lower() + yr]
+                usernames += [(initials[0] + concat + names[-1]).lower() + yr]
+                usernames += [(names[0] + concat + initials[-1]).lower() + yr]
+                usernames += [(initials[0] + concat + initials[-1]).lower() + yr]
+        
+    return list(set(usernames))
+
+def main():
+    # Argument parser
+    parser = argparse.ArgumentParser(description="Generate usernames from first, middle and last names.")
+    parser.add_argument("-f", "--first", required=True, help="First name")
+    parser.add_argument("-l", "--last", required=True, help="Last name")
+    parser.add_argument("-m", "--middle", help="Middle name")
+    parser.add_argument("-n", "--nickname", help="Nickname")
+    parser.add_argument("-y", "--year", type=int, help="Year")
+    parser.add_argument("-o", "--output", default="usernames.txt", help="Output filename")
+
+    args = parser.parse_args()
+
+    # Generate usernames
+    usernames = generate_usernames(args.first, args.last, args.middle, args.nickname, args.year)
+
+    # Write usernames to file
+    with open(args.output, "w") as file:
+        for username in usernames:
+            file.write(username + "\n")
+
+if __name__ == "__main__":
+    main()
